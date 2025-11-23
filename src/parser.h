@@ -2,7 +2,8 @@
 #include "scanner.h"
 #include "semantic.h"
 
-class Parser {
+class Parser
+{
 private:
     Scanner scanner;
     Token current;
@@ -14,6 +15,13 @@ private:
     void declaration();
     void statement();
     void expression();
+
+    // Recursive descent helpers for operator precedence
+    void parseRelational();
+    void parseTerm();
+    void parseFactor();
+    void parsePrimary();
+    void parseLogical(); // handles &&, ||
 
 public:
     Parser(Scanner sc);
