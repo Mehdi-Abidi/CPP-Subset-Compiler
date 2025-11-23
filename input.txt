@@ -1,0 +1,6 @@
+int x;
+char y;
+bool flag;
+double a;
+string str;
+float b;
