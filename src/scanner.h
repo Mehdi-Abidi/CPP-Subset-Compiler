@@ -7,6 +7,7 @@ class Scanner {
 private:
     string src;
     int pos;
+    int line;
 
 public:
     Scanner(string source);

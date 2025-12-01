@@ -6,17 +6,17 @@ using namespace std;
 
 int main() {
     ifstream file("input.txt");
+    if (!file.is_open()) {
+        cout << "Error: Could not open input.txt" << endl;
+        return 1;
+    }
+    
     stringstream buffer;
     buffer << file.rdbuf();
+    file.close();
 
     Scanner sc(buffer.str());
-    Token t;
-    do {
-        t = sc.getNextToken();
-        cout << "Token: " << t.value << endl;
-    } while(t.type != T_EOF);
-
-    Parser parser(sc);
+    Parser parser(sc, "input.txt");
     parser.parse();
 
     return 0;

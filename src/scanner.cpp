@@ -5,15 +5,22 @@ Scanner::Scanner(string source)
 {
     src = source;
     pos = 0;
+    line = 1;
 }
 
 Token Scanner::getNextToken()
 {
     while (pos < src.size() && isspace(src[pos]))
+    {
+        if (src[pos] == '\n')
+        {
+            line++;
+        }
         pos++;
+    }
 
     if (pos >= src.size())
-        return {T_EOF, ""};
+        return {T_EOF, "", line};
 
     char c = src[pos];
 
@@ -26,17 +33,13 @@ Token Scanner::getNextToken()
             word += src[pos++];
         }
         if (word == "int")
-            return {T_INT, word};
+            return {T_INT, word, line};
         if (word == "char")
             return {T_CHAR, word};
         if (word == "bool")
             return {T_BOOL, word};
-        if (word == "double")
-            return {T_DOUBLE, word};
-        if (word == "float")
-            return {T_FLOAT, word};
-        if (word == "string")
-            return {T_STRING, word};
+        if (word == "void")
+            return {T_VOID, word};
 
         if (word == "if")
             return {T_IF, word};
@@ -47,50 +50,36 @@ Token Scanner::getNextToken()
         if (word == "return")
             return {T_RETURN, word};
         if (word == "main")
-            return {T_MAIN, word};
-        return {T_IDENTIFIER, word};
+            return {T_MAIN, word, line};
+        return {T_IDENTIFIER, word, line};
     }
     if (c == ',')
     {
         pos++; // move past ','
-        return {T_COMMA, ","};
+        return {T_COMMA, ",", line};
     }
     if (c == '&' && pos + 1 < src.size() && src[pos + 1] == '&')
     {
         pos += 2;
-        return {T_AND, "&&"};
+        return {T_AND, "&&", line};
     }
     if (c == '|' && pos + 1 < src.size() && src[pos + 1] == '|')
     {
         pos += 2;
         return {T_OR, "||"};
     }
-    if (c == '!')
-    {
-        if (pos + 1 < src.size() && src[pos + 1] == '=')
-        {
-            pos += 2;
-            return {T_NE, "!="};
-        }
-        else
-        {
-            pos++;
-            return {T_NOT, "!"};
-        }
-    }
-
     // Check for multi-char operators first
     if (c == '=')
     {
         if (pos + 1 < src.size() && src[pos + 1] == '=')
         {
             pos += 2;
-            return {T_EQ, "=="};
+            return {T_EQ, "==", line};
         }
         else
         {
             pos++;
-            return {T_ASSIGN, "="};
+            return {T_ASSIGN, "=", line};
         }
     }
     if (c == '!')
@@ -98,7 +87,12 @@ Token Scanner::getNextToken()
         if (pos + 1 < src.size() && src[pos + 1] == '=')
         {
             pos += 2;
-            return {T_NE, "!="};
+            return {T_NE, "!=", line};
+        }
+        else
+        {
+            pos++;
+            return {T_NOT, "!", line};
         }
     }
     if (c == '<')
@@ -106,12 +100,12 @@ Token Scanner::getNextToken()
         if (pos + 1 < src.size() && src[pos + 1] == '=')
         {
             pos += 2;
-            return {T_LE, "<="};
+            return {T_LE, "<=", line};
         }
         else
         {
             pos++;
-            return {T_LT, "<"};
+            return {T_LT, "<", line};
         }
     }
     if (c == '>')
@@ -119,12 +113,31 @@ Token Scanner::getNextToken()
         if (pos + 1 < src.size() && src[pos + 1] == '=')
         {
             pos += 2;
-            return {T_GE, ">="};
+            return {T_GE, ">=", line};
         }
         else
         {
             pos++;
-            return {T_GT, ">"};
+            return {T_GT, ">", line};
+        }
+    }
+
+    // Character literals
+    if (c == '\'')
+    {
+        pos++; // skip opening quote
+        if (pos < src.size())
+        {
+            char charVal = src[pos++];
+            if (pos < src.size() && src[pos] == '\'')
+            {
+                pos++; // skip closing quote
+                return {T_CHAR_LITERAL, string(1, charVal), line};
+            }
+            else
+            {
+                return {T_EOF, ""}; // error: unterminated character literal
+            }
         }
     }
 
@@ -136,7 +149,7 @@ Token Scanner::getNextToken()
         {
             num += src[pos++];
         }
-        return {T_NUMBER, num};
+        return {T_NUMBER, num, line};
     }
 
     pos++;
@@ -144,30 +157,28 @@ Token Scanner::getNextToken()
     switch (c)
     {
     case '+':
-        return {T_PLUS, "+"};
+        return {T_PLUS, "+", line};
     case '-':
-        return {T_MINUS, "-"};
+        return {T_MINUS, "-", line};
     case '*':
-        return {T_MUL, "*"};
+        return {T_MUL, "*", line};
     case '/':
-        return {T_DIV, "/"};
+        return {T_DIV, "/", line};
     case '[':
-        return {T_LBRACKET, "["};
+        return {T_LBRACKET, "[", line};
     case ']':
-        return {T_RBRACKET, "]"};
-    case '=':
-        return {T_ASSIGN, "="};
+        return {T_RBRACKET, "]", line};
     case '(':
-        return {T_LPAREN, "("};
+        return {T_LPAREN, "(", line};
     case ')':
-        return {T_RPAREN, ")"};
+        return {T_RPAREN, ")", line};
     case '{':
-        return {T_LBRACE, "{"};
+        return {T_LBRACE, "{", line};
     case '}':
-        return {T_RBRACE, "}"};
+        return {T_RBRACE, "}", line};
     case ';':
-        return {T_SEMICOLON, ";"};
+        return {T_SEMICOLON, ";", line};
     default:
-        return {T_EOF, ""};
+        return {T_EOF, "", line};
     }
 }

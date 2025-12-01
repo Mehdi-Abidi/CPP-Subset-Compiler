@@ -3,8 +3,7 @@
 using namespace std;
 
 enum TokenType {
-    T_INT, T_CHAR, T_BOOL,T_VOID,T_FLOAT,T_DOUBLE,
-    T_STRING,
+    T_INT, T_CHAR, T_BOOL, T_VOID,
     T_IF, T_ELSE, T_FOR, T_RETURN, T_MAIN,
     T_IDENTIFIER, T_NUMBER, T_CHAR_LITERAL,
     T_PLUS, T_MINUS, T_MUL, T_DIV,
@@ -21,4 +20,5 @@ enum TokenType {
 struct Token {
     TokenType type;
     string value;
+    int line; // 1-based line number in the source file
 };
