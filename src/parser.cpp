@@ -21,7 +21,7 @@ void Parser::match(TokenType t)
     else
     {
         cout << "Syntax Error! Expected " << (int)t << " but got " << (int)current.type << " (" << current.value << ")" << " at " << fileName << ":" << current.line << endl;
-        exit(1);
+        // Don't exit; continue parsing (error recovery)
     }
 }
 
@@ -35,6 +35,17 @@ bool Parser::isType(TokenType t)
     return t == T_INT || t == T_CHAR || t == T_BOOL || t == T_VOID;
 }
 
+// Helper: skip to next reasonable synchronization point
+void Parser::skipToRecovery()
+{
+    while (current.type != T_SEMICOLON && current.type != T_LBRACE && 
+           current.type != T_RBRACE && current.type != T_EOF && 
+           !isType(current.type))
+    {
+        advance();
+    }
+}
+
 // ------------------ Program ------------------
 void Parser::program()
 {
@@ -43,7 +54,7 @@ void Parser::program()
     {
         if (isType(current.type))
         {
-            // Check if it's a function declaration/definition
+            // Could be variable declaration or function declaration/definition
             TokenType type = current.type;
             int typeLine = current.line;
             advance();
@@ -71,12 +82,12 @@ void Parser::program()
                             if (current.type != T_IDENTIFIER)
                             {
                                 cout << "Syntax Error: expected parameter name at " << fileName << ":" << current.line << "\n";
-                                exit(1);
+                                skipToRecovery();
+                                break;
                             }
                             string pName = current.value;
                             paramTypes.push_back(pTypeTok == T_INT ? "int" : pTypeTok == T_CHAR ? "char" : pTypeTok == T_BOOL ? "bool" : "void");
                             paramNames.push_back(pName);
-                            // Insert parameter into function scope (will be done when entering scope)
                             advance();
                             if (current.type == T_COMMA)
                             {
@@ -87,20 +98,20 @@ void Parser::program()
                             break;
                         }
                     }
-                    match(T_RPAREN);
+                    if (current.type == T_RPAREN) advance();
+                    else cout << "Syntax Error: expected ')' at " << fileName << ":" << current.line << "\n";
 
                     string retType = (type == T_INT ? "int" : type == T_CHAR ? "char" : type == T_BOOL ? "bool" : "void");
 
-                    bool isDefinition = false;
                     if (current.type == T_SEMICOLON)
                     {
-                        isDefinition = false;
+                        // Function declaration
                         semantic.declareFunction(name, retType, paramTypes, paramNames, nameLine, false);
                         advance();
                     }
                     else if (current.type == T_LBRACE)
                     {
-                        isDefinition = true;
+                        // Function definition
                         if (semantic.declareFunction(name, retType, paramTypes, paramNames, nameLine, true))
                         {
                             semantic.enterFunctionBody(name);
@@ -121,13 +132,16 @@ void Parser::program()
                     }
                     else
                     {
-                        cout << "Syntax Error: expected ';' or '{' after function signature\n";
-                        exit(1);
+                        cout << "Syntax Error: expected ';' or '{' after function signature at " << fileName << ":" << current.line << "\n";
+                        skipToRecovery();
+                        if (current.type == T_SEMICOLON) advance();
+                        else if (current.type == T_LBRACE) block();
                     }
                 }
-                else
+                else if (current.type == T_LBRACKET || current.type == T_ASSIGN || 
+                         current.type == T_COMMA || current.type == T_SEMICOLON)
                 {
-                    // Variable declaration (type already consumed, name is 'name', and current is next token)
+                    // Variable declaration
                     bool isArray = false;
                     int arrSize = -1;
                     if (current.type == T_LBRACKET)
@@ -137,13 +151,14 @@ void Parser::program()
                         {
                             arrSize = stoi(current.value);
                             advance(); // skip size
-                            match(T_RBRACKET);
+                            if (current.type == T_RBRACKET) advance();
+                            else cout << "Syntax Error: expected ']' at " << fileName << ":" << current.line << "\n";
                             isArray = true;
                         }
                         else
                         {
-                            cout << "Syntax Error: expected array size\n";
-                            exit(1);
+                            cout << "Syntax Error: expected array size at " << fileName << ":" << current.line << "\n";
+                            skipToRecovery();
                         }
                     }
 
@@ -173,8 +188,9 @@ void Parser::program()
                         advance();
                         if (current.type != T_IDENTIFIER)
                         {
-                            cout << "Syntax Error: expected identifier in declaration list\n";
-                            exit(1);
+                            cout << "Syntax Error: expected identifier in declaration list at " << fileName << ":" << current.line << "\n";
+                            skipToRecovery();
+                            break;
                         }
                         string varName = current.value;
                         int vLine = current.line;
@@ -189,13 +205,14 @@ void Parser::program()
                             {
                                 vArrSize = stoi(current.value);
                                 advance();
-                                match(T_RBRACKET);
+                                if (current.type == T_RBRACKET) advance();
+                                else cout << "Syntax Error: expected ']' at " << fileName << ":" << current.line << "\n";
                                 vIsArray = true;
                             }
                             else
                             {
-                                cout << "Syntax Error: expected array size\n";
-                                exit(1);
+                                cout << "Syntax Error: expected array size at " << fileName << ":" << current.line << "\n";
+                                skipToRecovery();
                             }
                         }
 
@@ -218,14 +235,26 @@ void Parser::program()
                         }
                     }
 
-                    match(T_SEMICOLON);
+                    if (current.type == T_SEMICOLON) advance();
+                    else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n";
+                }
+                else
+                {
+                    cout << "Syntax Error: expected '(', '[', '=', ',', or ';' after identifier at " << fileName << ":" << current.line << "\n";
+                    skipToRecovery();
+                    if (current.type == T_SEMICOLON) advance();
                 }
             }
             else
             {
-                cout << "Syntax Error: expected identifier after type\n";
-                exit(1);
+                cout << "Syntax Error: expected identifier after type at " << fileName << ":" << current.line << "\n";
+                skipToRecovery();
             }
+        }
+        else if (current.type == T_SEMICOLON)
+        {
+            // Empty statement at global scope
+            advance();
         }
         else
         {
@@ -246,7 +275,6 @@ void Parser::parameterList()
         {
             string paramName = current.value;
             advance();
-            // parameters are handled when entering function body; no direct declare() here anymore
             
             if (current.type == T_COMMA)
             {
@@ -275,7 +303,9 @@ void Parser::argumentList()
 // ------------------ Block ------------------
 void Parser::block()
 {
-    match(T_LBRACE);
+    if (current.type == T_LBRACE) advance();
+    else cout << "Syntax Error: expected '{' at " << fileName << ":" << current.line << "\n";
+    
     semantic.enterScope();
     while (current.type != T_RBRACE && current.type != T_EOF)
     {
@@ -288,7 +318,10 @@ void Parser::block()
             statement();
         }
     }
-    match(T_RBRACE);
+    
+    if (current.type == T_RBRACE) advance();
+    else cout << "Syntax Error: expected '}' at " << fileName << ":" << current.line << "\n";
+    
     semantic.leaveScope();
 }
 
@@ -317,14 +350,15 @@ void Parser::declaration()
                 {
                     int size = stoi(current.value);
                     advance();
-                    match(T_RBRACKET);
+                    if (current.type == T_RBRACKET) advance();
+                    else cout << "Syntax Error: expected ']' at " << fileName << ":" << current.line << "\n";
                     isArray = true;
                     arrSize = size;
                 }
                 else
                 {
-                    cout << "Syntax Error: expected array size number\n";
-                    exit(1);
+                    cout << "Syntax Error: expected array size number at " << fileName << ":" << current.line << "\n";
+                    skipToRecovery();
                 }
             }
 
@@ -359,14 +393,16 @@ void Parser::declaration()
             }
             else
             {
-                cout << "Syntax Error: expected ',' or ';'\n";
-                exit(1);
+                cout << "Syntax Error: expected ',' or ';' at " << fileName << ":" << current.line << "\n";
+                skipToRecovery();
+                break;
             }
         }
         else
         {
-            cout << "Syntax Error: expected identifier!\n";
-            exit(1);
+            cout << "Syntax Error: expected identifier at " << fileName << ":" << current.line << "\n";
+            skipToRecovery();
+            break;
         }
     }
 }
@@ -402,19 +438,21 @@ void Parser::statement()
             // Array access
             advance();
             string indexType = expression();
-            match(T_RBRACKET);
+            if (current.type == T_RBRACKET) advance();
+            else cout << "Syntax Error: expected ']' at " << fileName << ":" << current.line << "\n";
             
             if (current.type == T_ASSIGN)
             {
                 advance();
                 string rhsType = expression();
                 semantic.noteInitialization(varName, nameLine);
-                match(T_SEMICOLON);
+                if (current.type == T_SEMICOLON) advance();
+                else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n";
             }
             else
             {
-                cout << "Syntax Error: expected '=' after array access\n";
-                exit(1);
+                cout << "Syntax Error: expected '=' after array access at " << fileName << ":" << current.line << "\n";
+                skipToRecovery();
             }
         }
         else if (current.type == T_LPAREN)
@@ -422,8 +460,12 @@ void Parser::statement()
             // Function call
             advance();
             argumentList();
-            match(T_RPAREN);
-            match(T_SEMICOLON);
+            if (current.type == T_RPAREN) advance();
+            else cout << "Syntax Error: expected ')' at " << fileName << ":" << current.line << "\n";
+            
+            if (current.type == T_SEMICOLON) advance();
+            else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n";
+            
             semantic.logFunctionCall(varName, nameLine);
         }
         else if (current.type == T_ASSIGN)
@@ -432,13 +474,15 @@ void Parser::statement()
             advance();
             string rhsType = expression();
             semantic.noteInitialization(varName, nameLine);
-            match(T_SEMICOLON);
+            if (current.type == T_SEMICOLON) advance();
+            else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n";
+            
             semantic.logAssignment(varName, "expression", nameLine);
         }
         else
         {
-            cout << "Syntax Error: expected '=', '[', or '('\n";
-            exit(1);
+            cout << "Syntax Error: expected '=', '[', or '(' after identifier at " << fileName << ":" << current.line << "\n";
+            skipToRecovery();
         }
     }
     else if (current.type == T_SEMICOLON)
@@ -448,18 +492,24 @@ void Parser::statement()
     }
     else
     {
-        cout << "Syntax Error: unexpected token in statement: " << current.value << "\n";
-        exit(1);
+        cout << "Syntax Error: unexpected token in statement at " << fileName << ":" << current.line << "\n";
+        skipToRecovery();
     }
 }
 
 // ------------------ If Statement ------------------
 void Parser::ifStatement()
 {
-    match(T_IF);
-    match(T_LPAREN);
+    if (current.type == T_IF) advance();
+    else cout << "Syntax Error: expected 'if' at " << fileName << ":" << current.line << "\n";
+    
+    if (current.type == T_LPAREN) advance();
+    else cout << "Syntax Error: expected '(' at " << fileName << ":" << current.line << "\n";
+    
     expression(); // condition
-    match(T_RPAREN);
+    
+    if (current.type == T_RPAREN) advance();
+    else cout << "Syntax Error: expected ')' at " << fileName << ":" << current.line << "\n";
     
     if (current.type == T_LBRACE)
     {
@@ -488,8 +538,11 @@ void Parser::ifStatement()
 // ------------------ For Statement ------------------
 void Parser::forStatement()
 {
-    match(T_FOR);
-    match(T_LPAREN);
+    if (current.type == T_FOR) advance();
+    else cout << "Syntax Error: expected 'for' at " << fileName << ":" << current.line << "\n";
+    
+    if (current.type == T_LPAREN) advance();
+    else cout << "Syntax Error: expected '(' at " << fileName << ":" << current.line << "\n";
     
     // Initialization (optional)
     if (current.type != T_SEMICOLON)
@@ -501,7 +554,8 @@ void Parser::forStatement()
         else
         {
             expression();
-            match(T_SEMICOLON);
+            if (current.type == T_SEMICOLON) advance();
+            else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n";
         }
     }
     else
@@ -514,40 +568,29 @@ void Parser::forStatement()
     {
         expression();
     }
-    match(T_SEMICOLON);
+    if (current.type == T_SEMICOLON) advance();
+    else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n";
     
-    // Increment (optional) - can be assignment or expression
+    // Increment (optional)
     if (current.type != T_RPAREN)
     {
-        // Check if it's an assignment (identifier followed by =)
-        // We need to peek ahead without consuming
         if (current.type == T_IDENTIFIER)
         {
             string idName = current.value;
             advance(); // consume identifier
             if (current.type == T_ASSIGN)
             {
-                // Assignment expression: identifier = expression
                 advance(); // consume =
-                expression(); // parse right side (should start with identifier, number, etc.)
+                expression();
             }
-            else
-            {
-                // Not an assignment - parse as expression starting from identifier
-                // But we already consumed it, so we need to parse from where we are
-                // Actually, if it's just an identifier, that's a valid expression
-                // If there are operators after, parse them
-                if (current.type == T_PLUS || current.type == T_MINUS || 
+            else if (current.type == T_PLUS || current.type == T_MINUS || 
                     current.type == T_MUL || current.type == T_DIV ||
                     current.type == T_LT || current.type == T_LE || 
                     current.type == T_GT || current.type == T_GE ||
                     current.type == T_EQ || current.type == T_NE ||
                     current.type == T_AND || current.type == T_OR)
-                {
-                    // Continue parsing the expression from the operator
-                    parseTerm(); // Start from term level since we already have the identifier
-                }
-                // Otherwise it's just an identifier, which is a valid expression
+            {
+                parseTerm();
             }
         }
         else
@@ -555,7 +598,9 @@ void Parser::forStatement()
             expression();
         }
     }
-    match(T_RPAREN);
+    
+    if (current.type == T_RPAREN) advance();
+    else cout << "Syntax Error: expected ')' at " << fileName << ":" << current.line << "\n";
     
     // Body
     if (current.type == T_LBRACE)
@@ -573,13 +618,18 @@ void Parser::forStatement()
 void Parser::returnStatement()
 {
     int retLine = current.line;
-    match(T_RETURN);
+    if (current.type == T_RETURN) advance();
+    else cout << "Syntax Error: expected 'return' at " << fileName << ":" << current.line << "\n";
+    
     string retType;
     if (current.type != T_SEMICOLON)
     {
         retType = expression();
     }
-    match(T_SEMICOLON);
+    
+    if (current.type == T_SEMICOLON) advance();
+    else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n";
+    
     semantic.noteReturn(retLine, retType);
     semantic.logReturn(retLine);
 }
@@ -705,7 +755,9 @@ string Parser::parsePrimary()
             // Array access
             advance();
             expression();
-            match(T_RBRACKET);
+            if (current.type == T_RBRACKET) advance();
+            else cout << "Syntax Error: expected ']' at " << fileName << ":" << current.line << "\n";
+            
             semantic.noteUse(name, nameLine, "array access");
             return semantic.getVariableType(name, nameLine);
         }
@@ -723,7 +775,9 @@ string Parser::parsePrimary()
                     argTypes.push_back(expression());
                 }
             }
-            match(T_RPAREN);
+            if (current.type == T_RPAREN) advance();
+            else cout << "Syntax Error: expected ')' at " << fileName << ":" << current.line << "\n";
+            
             semantic.logFunctionCall(name, nameLine);
             // For now assume functions return int by default
             return "int";
@@ -738,14 +792,16 @@ string Parser::parsePrimary()
     {
         advance();
         string t = expression();
-        match(T_RPAREN);
+        if (current.type == T_RPAREN) advance();
+        else cout << "Syntax Error: expected ')' at " << fileName << ":" << current.line << "\n";
         return t;
     }
     else
     {
         cout << "Syntax Error: expected number, identifier, character literal, or '(' at "
              << fileName << ":" << current.line << "\n";
-        exit(1);
+        skipToRecovery();
+        return "int";
     }
 }
 

@@ -1,0 +1,46 @@
+int x;
+int y = 10;
+char c;
+bool flag = true;
+
+int arr[10];
+char str[20];
+bool flags[5];
+
+int a, b, c;
+int d = 1, e, f = 2;
+char name[15], code;
+
+int add(int x, int y);
+char get_char();
+
+int add(int x, int y) {
+    int result = x + y;
+    return result;
+}
+
+int main() {
+    int local1 = 5;
+    int local2, local3 = 10;
+    char local_name[20];
+    
+    int y = 20;
+    
+    local1 = add(local1, local2);
+    
+    arr[0] = 100;
+    arr[1] = 200;
+    
+    if (local1 > 0) {
+        local2 = local1 + 1;
+    } else {
+        local2 = local1 - 1;
+    }
+    
+    for (int i = 0; i < 10; i = i + 1) {
+        arr[i] = i;
+    }
+    
+    return 0;
+}
+

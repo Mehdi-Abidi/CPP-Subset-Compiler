@@ -1,0 +1,76 @@
+int x = 0;
+char y;
+bool flag;
+double a;
+string str;
+float b;
+char str[10];
+int arr[10];
+bool flag[10];
+float arrf[10];
+
+int a = 5;
+int a,b,c;
+int b,c = 5;
+d = a + c;
+d = a - c;
+d = a * c;
+d = a / c;
+int e = d;
+if (a == c){
+    d = a + c;
+}
+
+if (a <= c){
+    d = a + c;
+}
+if (a >= c){
+    d = a + c;
+}
+
+if (a < c){
+    d = a + c;
+}
+if (a > c){
+    d = a + c;
+}
+
+if(a==c && b== c){
+    d = c + b;
+}
+
+
+if(a==c || b>= c){
+    d = c + b;
+}
+
+if(a==c && b== c){
+    d = c + b;
+}
+
+if(!flag) {
+    a = 0;
+}
+else{
+    a = 1;
+}
+
+for (int i = 0; i< 5;i++){
+    arr[i] = i+1;
+}
+
+int main (){
+    c = a + b;
+}
+int add (int c , int d){
+    int y;
+    y = c+d;
+    return y;
+}
+void main (){
+    b = a + b;
+    int c,d = 60;
+    add(c,d);
+}
+
+

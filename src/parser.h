@@ -14,6 +14,7 @@ private:
     void match(TokenType t);
     bool check(TokenType t);
     bool isType(TokenType t);
+    void skipToRecovery();
 
     void program();
     void declaration();

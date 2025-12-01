@@ -25,30 +25,30 @@ Token Scanner::getNextToken()
     char c = src[pos];
 
     // Identifiers & Keywords
-    if (isalpha(c))
+    if (isalpha(c) || c == '_')
     {
         string word = "";
-        while (pos < src.size() && isalnum(src[pos]))
+        while (pos < src.size() && (isalnum(src[pos]) || src[pos] == '_'))
         {
             word += src[pos++];
         }
         if (word == "int")
             return {T_INT, word, line};
         if (word == "char")
-            return {T_CHAR, word};
+            return {T_CHAR, word, line};
         if (word == "bool")
-            return {T_BOOL, word};
+            return {T_BOOL, word, line};
         if (word == "void")
-            return {T_VOID, word};
+            return {T_VOID, word, line};
 
         if (word == "if")
-            return {T_IF, word};
+            return {T_IF, word, line};
         if (word == "else")
-            return {T_ELSE, word};
+            return {T_ELSE, word, line};
         if (word == "for")
-            return {T_FOR, word};
+            return {T_FOR, word, line};
         if (word == "return")
-            return {T_RETURN, word};
+            return {T_RETURN, word, line};
         if (word == "main")
             return {T_MAIN, word, line};
         return {T_IDENTIFIER, word, line};
@@ -66,7 +66,7 @@ Token Scanner::getNextToken()
     if (c == '|' && pos + 1 < src.size() && src[pos + 1] == '|')
     {
         pos += 2;
-        return {T_OR, "||"};
+        return {T_OR, "||", line};
     }
     // Check for multi-char operators first
     if (c == '=')

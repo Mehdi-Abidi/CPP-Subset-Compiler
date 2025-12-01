@@ -1,76 +1,70 @@
-int x = 0;
+int x;
 char y;
 bool flag;
-double a;
-string str;
-float b;
 char str[10];
 int arr[10];
-bool flag[10];
-float arrf[10];
+bool flagArr[10];
 
-int a = 5;
-int a,b,c;
-int b,c = 5;
-d = a + c;
-d = a - c;
-d = a * c;
-d = a / c;
+int a = 5, b, c;
+int d = 10;
 int e = d;
-if (a == c){
-    d = a + c;
-}
 
-if (a <= c){
-    d = a + c;
-}
-if (a >= c){
-    d = a + c;
-}
+int add(int c, int d);
+int multiply(int x, int y);
 
-if (a < c){
-    d = a + c;
-}
-if (a > c){
-    d = a + c;
-}
-
-if(a==c && b== c){
-    d = c + b;
-}
-
-
-if(a==c || b>= c){
-    d = c + b;
-}
-
-if(a==c && b== c){
-    d = c + b;
-}
-
-if(!flag) {
-    a = 0;
-}
-else{
-    a = 1;
-}
-
-for (int i = 0; i< 5;i++){
-    arr[i] = i+1;
-}
-
-int main (){
-    c = a + b;
-}
-int add (int c , int d){
+int add(int c, int d) {
     int y;
-    y = c+d;
+    y = c + d;
     return y;
 }
-void main (){
-    b = a + b;
-    int c,d = 60;
-    add(c,d);
+
+int sumArray(int n, int a[]) {
+
+    int s = 0;
+    for (int i = 0; i < n; i = i + 1;) {
+        s = s + a[i];
+    }
+    return s;
 }
 
+int multiply(int x, int y) {
+    return x * y;
+}
 
+int main() {
+    d = a + c;
+    d = a - 2;
+    d = a * 3;
+    d = d / a;
+
+    if (a == c) {
+        d = a + c;
+    } else if (a <= d && !flag) {
+        d = a + d;
+    } else if (a < d || b == c) {
+        d = d - a;
+    } else {
+        d = 0;
+    }
+
+    int i;
+    for (i = 0; i < 5; i = i + 1) {
+        arr[i] = i + 1;
+    }
+
+    int total = sumArray(5, arr);
+
+    int r1 = add(a, d);
+    int r2 = multiply(a, d);
+    int r3 = add(a);  // intentional semantic error: wrong argument count
+
+    {
+        int a; // shadows global 'a' — should produce a shadowing warning (not an error)
+        a = 100;
+    }
+
+    y = 'A';
+    flag = (a > d);
+
+    return total + r1 + r2;
+}
