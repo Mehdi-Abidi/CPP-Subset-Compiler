@@ -193,18 +193,33 @@ Token Scanner::getNextToken()  // Lex the next token from the source
         return {T_NUMBER, num, line};  // Return number token
     }
 
+    // Handle operators
     pos++;  // For single-char tokens, advance one char
-
-    switch (c)  // Handle single-character tokens
+    
+    switch (c)
     {
-    case '+':  // Plus
+    case '+':
+        // Check for ++
+        if (pos < src.size() && src[pos] == '+') {
+            pos++;  // consume second +
+            return {T_INC, "++", line};  // NEW
+        }
         return {T_PLUS, "+", line};
-    case '-':  // Minus
+    
+    case '-':
+        // Check for --
+        if (pos < src.size() && src[pos] == '-') {
+            pos++;  // consume second -
+            return {T_DEC, "--", line};  // NEW
+        }
         return {T_MINUS, "-", line};
-    case '*':  // Multiply
+    
+    case '*':
         return {T_MUL, "*", line};
-    case '/':  // Divide (note: comments are handled earlier)
+    
+    case '/':
         return {T_DIV, "/", line};
+    
     case '[':  // Left bracket
         return {T_LBRACKET, "[", line};
     case ']':  // Right bracket

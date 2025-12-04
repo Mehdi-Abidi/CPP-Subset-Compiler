@@ -14,7 +14,7 @@ enum TokenType {
     T_LBRACE, T_RBRACE,
     T_LBRACKET, T_RBRACKET,
     T_SEMICOLON, T_COMMA,
-    T_EOF,T_TRUE,T_FALSE
+    T_EOF,T_TRUE,T_FALSE,T_INC,T_DEC
 };
 
 struct Token {

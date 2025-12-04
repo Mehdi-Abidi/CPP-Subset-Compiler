@@ -570,80 +570,96 @@ void Parser::ifStatement() // This parses an if statement with optional else
  // [Syntax Analysis with Semantic Hooks] Parse for-loops
 void Parser::forStatement() // This parses a for loop
 {
-    if (current.type == T_FOR) advance(); // Move past 'for' keyword
-    else cout << "Syntax Error: expected 'for' at " << fileName << ":" << current.line << "\n"; // Report missing 'for'
+    if (current.type == T_FOR) advance();
+    else cout << "Syntax Error: expected 'for' at " << fileName << ":" << current.line << "\n";
     
-    if (current.type == T_LPAREN) advance(); // Expect '(' and move past it
-    else cout << "Syntax Error: expected '(' at " << fileName << ":" << current.line << "\n"; // Report missing '('
+    if (current.type == T_LPAREN) advance();
+    else cout << "Syntax Error: expected '(' at " << fileName << ":" << current.line << "\n";
     
-    // Initialization (optional) // First part inside for parentheses
-    if (current.type != T_SEMICOLON) // If not just ';'
+    // Initialization (optional)
+    if (current.type != T_SEMICOLON)
     {
-        if (isType(current.type)) // If we see a type
+        if (isType(current.type))
         {
-            declaration(); // declaration with semicolon // Parse a declaration like int i = 0;
+            declaration(); // declaration with semicolon
         }
-        else // Otherwise
+        else
         {
-            expression(); // Parse an expression like i = 0
-            if (current.type == T_SEMICOLON) advance(); // Expect ';' to end init part
-            else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n"; // Report missing ';'
+            expression();
+            if (current.type == T_SEMICOLON) advance();
+            else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n";
         }
     }
-    else // If current is ';'
+    else
     {
-        advance(); // skip semicolon // Move past ';' to next part
+        advance(); // skip semicolon
     }
     
-    // Condition (optional) // Second part inside for parentheses
-    if (current.type != T_SEMICOLON) // If not just ';'
+    // Condition (optional)
+    if (current.type != T_SEMICOLON)
     {
-        expression(); // Parse the loop condition like i < 10
+        string condType = expression();
+        // TYPE CHECK: condition must be bool
+        if (condType != "bool") {
+            semantic.logError("For condition must be bool, not " + condType, current.line);
+        }
     }
-    if (current.type == T_SEMICOLON) advance(); // Expect ';' to end condition part
-    else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n"; // Report missing ';'
+    if (current.type == T_SEMICOLON) advance();
+    else cout << "Syntax Error: expected ';' at " << fileName << ":" << current.line << "\n";
     
-    // Increment (optional) // Third part inside for parentheses
-    if (current.type != T_RPAREN) // If not ')'
+    // Increment (optional) - FIX THIS PART
+    if (current.type != T_RPAREN)
     {
-        if (current.type == T_IDENTIFIER) // If it starts with a name
+        if (current.type == T_IDENTIFIER)
         {
-            string idName = current.value; // Save the name
-            advance(); // consume identifier // Move past the name
-            if (current.type == T_ASSIGN) // If '=' follows
-            {
-                advance(); // consume = // Move past '='
-                expression(); // Parse the expression like i = i + 1
+            string idName = current.value;
+            int idLine = current.line;
+            advance(); // consume identifier
+            
+            // Handle postfix ++ or --
+            if (current.type == T_INC || current.type == T_DEC) {  // NEW
+                advance();  // consume ++ or --
+                semantic.noteUse(idName, idLine, "increment");
             }
-            else if (current.type == T_PLUS || current.type == T_MINUS || // If we see an operator
+            // Handle assignment
+            else if (current.type == T_ASSIGN)
+            {
+                advance(); // consume =
+                expression();
+            }
+            // Handle other binary operators (for complex updates)
+            else if (current.type == T_PLUS || current.type == T_MINUS || 
                     current.type == T_MUL || current.type == T_DIV ||
                     current.type == T_LT || current.type == T_LE || 
                     current.type == T_GT || current.type == T_GE ||
                     current.type == T_EQ || current.type == T_NE ||
                     current.type == T_AND || current.type == T_OR)
             {
-                parseTerm(); // Parse a simple term/expression
+                // Put the operator back and parse as expression
+                // This handles cases like i+=1, i*2, etc.
+                parseTerm();
             }
         }
-        else // If it does not start with a name
+        else
         {
-            expression(); // Parse a general expression
+            // General expression (fallback)
+            expression();
         }
     }
     
-    if (current.type == T_RPAREN) advance(); // Expect ')' to close for and move past it
-    else cout << "Syntax Error: expected ')' at " << fileName << ":" << current.line << "\n"; // Report missing ')'
+    if (current.type == T_RPAREN) advance();
+    else cout << "Syntax Error: expected ')' at " << fileName << ":" << current.line << "\n";
     
-    // Body // Now parse the loop body
-    if (current.type == T_LBRACE) // If '{' follows
+    // Body
+    if (current.type == T_LBRACE)
     {
-        block(); // Parse block as loop body
+        block();
     }
-    else // If no '{'
+    else
     {
-        statement(); // Parse a single statement as loop body
+        statement();
     }
-    semantic.logForLoop(current.line); // Log that we parsed a for loop
+    semantic.logForLoop(current.line);
 }
 
  // ------------------ Return Statement ------------------
@@ -786,7 +802,14 @@ string Parser::parsePrimary()
         string name = current.value;
         int nameLine = current.line;
         advance();
-
+        
+        // Check for postfix ++ or --
+        if (current.type == T_INC || current.type == T_DEC) {  // NEW
+            advance();  // consume ++ or --
+            semantic.noteUse(name, nameLine, "increment/decrement");
+            return semantic.getVariableType(name, nameLine);
+        }
+        
         if (current.type == T_LBRACKET)
         {
             advance(); // skip '['
