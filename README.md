@@ -81,12 +81,37 @@ This compiles all .cpp files into compiler.exe
 
 Place your input program in input.txt, e.g.:
 ```bash
-int x;
-char y;
-bool flag;
+int square(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    int x;
+    bool flag;
+    char letters[3];
+
+    x = true;          // Semantic Error: assigning bool to int
+    flag = 5;          // Semantic Error: assigning int to bool
+    int c =;           // Syntax Error : Not assigning of value
+    y = 10;            
+    letters = 'A';    
+    letters[0]='a';
+    letters[flag] = 'Z'; // Semantic Error: index must be integer 
+    letters[4]='b'; // Semantic Error: array out of bound access 
+    addsd(x);      //Semantic Error: function undeclared semantic     
+    square(5);  //Semantic Error : Argument count mismatched
+    square(3,'a'); //Semantic Error: Argument Type mismatched
+    for(int i=0;i<3;i++){
+        letters[i]='a';
+    }
+    return 'c';      //Semantic Error : Return type not consistent                 
+}
 ```
 
 Run the compiler:
 ```bash
 .\compiler.exe
 ```
+
+### Output From Given Input File:
+![Output](output.png)
