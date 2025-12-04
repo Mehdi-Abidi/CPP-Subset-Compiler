@@ -13,3 +13,4 @@ public:
     Scanner(string source);
     Token getNextToken();
 };
+
