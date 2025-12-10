@@ -1,6 +1,6 @@
 # Simple C++ Subset Compiler
 
-**Authors:** Mehdi Abidi | Fruzan Ahmed | Mufeed Zaidi
+**Authors:** Mehdi Abidi | Furzan Ahmed | Mufeed Zaidi
 
 **Project:** Compiler Construction  
 
